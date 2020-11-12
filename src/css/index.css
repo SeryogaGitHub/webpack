@@ -1,0 +1,8 @@
+h1{
+    font-size: 150px;
+}
+.image{
+    background: url(../img/img-1.jpg) no-repeat center/ cover;
+    width: 250px;
+    height: 250px;
+}
