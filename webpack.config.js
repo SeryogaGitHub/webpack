@@ -1,13 +1,11 @@
-const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const path = require('path');
 const {CleanWebpackPlugin} = require('clean-webpack-plugin');
 const OptimizeCssAssetsWebpackPlugin = require('optimize-css-assets-webpack-plugin');
-const TerserWebpackPlugin = require('terser-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
 
-const isDev = process.env.NODE_ENV === "development";
+const isDev = process.env.NODE_ENV === 'development';
 const isProd = !isDev;
 
 const optimization = () => {
@@ -19,11 +17,10 @@ const optimization = () => {
 	}
 	if(isProd){
 		config.minimizer = [
+			new TerserPlugin(),
 			new OptimizeCssAssetsWebpackPlugin()
-			// new TerserWebpackPlugin()
 		]
 	}
-
 	return config;
 }
 
@@ -38,23 +35,37 @@ const cssLoaders = extra => {
 				reloadAll: true
 			},
 		},
-		'css-loader'
+		'css-loader',
+		{
+			loader: 'postcss-loader',
+			options: {
+				postcssOptions: {
+					plugins: [
+						[
+							'autoprefixer',
+						],
+					],
+				}
+			}
+		},
 	]
 
 	if(extra){
 		loaders.push(extra)
 	}
+
+	return loaders
 }
 
 console.log(process.env.NODE_ENV);
 
 module.exports = {
 	context: path.resolve(__dirname, 'src'),
-	mode: "development",
+	mode: 'development',
 	entry: {
-		app: "./index.js" //app назва вхідного файла
+		app: ['@babel/polyfill','./index.js'] //app назва вхідного файла
 	},
-	devtool: "source-map",
+	devtool: isDev ? 'source-map' : '',
 	resolve: {
 		alias: {
 			'@': path.resolve(__dirname, 'src'),
@@ -97,79 +108,21 @@ module.exports = {
 			},
 			{
 				test: /\.css$/,
-				use: [
-					{
-						loader: MiniCssExtractPlugin.loader, //розділяє css з js записує в окремий файл
-						options: {
-							hmr: isDev,
-							reloadAll: true
-						}
-					},
-					{
-						loader: 'css-loader',
-						options: {sourceMap: true}
-					}, {
-						loader: 'postcss-loader',
-						options: {
-							sourceMap: true,
-							postcssOptions: {
-								plugins: [
-									[
-										'autoprefixer',
-										{
-											// Options
-										},
-									],
-								],
-							}
-						}
-					}
-				],
+				use: cssLoaders()
 			},{
 				test: /\.s[ac]ss$/,
 				exclude: /node_modules/,
-				use:[
-					{
-						loader: MiniCssExtractPlugin.loader, //розділяє css з js записує в окремий файл
-						options: {
-							hmr: isDev,
-							reloadAll: true
-						}
-					},
-					{
-						loader: 'css-loader',
-						options: {sourceMap: true}
-					},
-					{
-						loader: 'postcss-loader',
-						options: {
-							postcssOptions: {
-								plugins: [
-									[
-										'autoprefixer',
-										{
-											// Options
-										},
-									],
-								],
-							},
-							sourceMap: true,
-						}
-					}, {
-						loader: 'sass-loader',
-						options: {sourceMap: true}
-					}
-				],
+				use: cssLoaders('sass-loader')
 			},
 		]
 	},
 	plugins: [
 		new HtmlWebpackPlugin({
-			template: "index.html",
+			template: 'index.html',
 			filename: 'index.html'
 		}),
 		new HtmlWebpackPlugin({
-			template: "production.html",
+			template: 'production.html',
 			filename: 'production.html'
 		}),
 		new CleanWebpackPlugin(),
